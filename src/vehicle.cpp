@@ -4,13 +4,17 @@
 #include <iomanip>
 using namespace std;
 
+const double MaxAccelS = 10;//m/s^2
+const double MaxAccelD = 10;//m/s^2
+
 Vehicle::Vehicle(double s, double d, double yaw, double speed, double x, double y):
 	m_s(s),
 	m_d(d),
 	m_yaw(yaw),
 	m_speed(speed),
 	m_x(x),
-	m_y(y)
+	m_y(y),
+	m_state(vsKL)
 {
 	
 }
@@ -38,6 +42,13 @@ void Vehicle::process(const vector<double>& map_waypoints_x,
 		m_ptsy.push_back(m_y);
 	}	
 	else{
+		if(prev_size>2){			
+			//required to minimize jerk on lane change
+			//this helps to create smooth trajectory because spline will be build taking into account current trajectory
+			m_ptsx.push_back(previous_path_x[0]);
+			m_ptsy.push_back(previous_path_y[0]);
+		}
+		
 		ref_x = previous_path_x[prev_size - 1];
 		ref_y = previous_path_y[prev_size - 1];
 		double ref_x_prev = previous_path_x[prev_size - 2];
@@ -51,9 +62,9 @@ void Vehicle::process(const vector<double>& map_waypoints_x,
 	
 	int lane = (int(m_s)/100)%3;
 	
-	vector<double> next_wp0 = getXY(m_s + 30, 2+4*lane, map_waypoints_s, map_waypoints_x, map_waypoints_y);
-	vector<double> next_wp1 = getXY(m_s + 60, 2+4*lane, map_waypoints_s, map_waypoints_x, map_waypoints_y);
-	vector<double> next_wp2 = getXY(m_s + 90, 2+4*lane, map_waypoints_s, map_waypoints_x, map_waypoints_y);
+	vector<double> next_wp0 = getXY(m_s + 50, 2+4*lane, map_waypoints_s, map_waypoints_x, map_waypoints_y);
+	vector<double> next_wp1 = getXY(m_s + 100, 2+4*lane, map_waypoints_s, map_waypoints_x, map_waypoints_y);
+	vector<double> next_wp2 = getXY(m_s + 150, 2+4*lane, map_waypoints_s, map_waypoints_x, map_waypoints_y);
 
 	m_ptsx.push_back(next_wp0[0]);
 	m_ptsx.push_back(next_wp1[0]);
@@ -71,12 +82,13 @@ void Vehicle::process(const vector<double>& map_waypoints_x,
 	
 	m_ptsx.clear();
 	m_ptsy.clear();
-	//double ref_vel = 15;
-	//double target_x = 30.;
-	//double target_y = s(target_x);
-	//double target_dist = sqrt(pow(target_x,2.) + pow(target_y,2.));
 	
-	double target_dist = 30.;
+	//Point interval 0.02 sec
+	//max speed 50 mph
+	//m meters   1 sec
+	//x			0.02 sec
+	//max distance = 0.02*m/1
+	
 	double ref_vel = mph2mps(49.5);
 	double dt = 0.02;
 	
@@ -347,6 +359,11 @@ void Vehicle::pts_to_global_coords(const std::vector<double>& origin_xy, double 
 
 	}	
 }
+
+bool get_vehicle_ahead(Vehicle& vehicle) const{
+	
+}
+
 
 vector<double> Vehicle::ptsx() const{
 	return m_ptsx;

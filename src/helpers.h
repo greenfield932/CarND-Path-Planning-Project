@@ -2,6 +2,15 @@
 #define _HELPERS_H_
 #include <math.h>
 #include <vector>
+enum class sf_fields{//sensor fusion fields
+	kId,
+	kX,
+	kY, 
+	kVx,
+	kVy,
+	kS,
+	kD	
+};
 
 // For converting back and forth between radians and degrees.
 constexpr double pi(){ 
