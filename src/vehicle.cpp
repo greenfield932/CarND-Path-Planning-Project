@@ -44,12 +44,6 @@ std::vector<Vehicle::VehicleState> Vehicle::successor_states() const{
 			states.push_back(vsPLCR);			
 		}		
 	}
-	else if(m_state == vsLCL){
-		
-	}
-	else if(m_state == vsLCR){
-		
-	}
 	else if(m_state == vsPLCL){
 		states.push_back(vsPLCL);					
 		states.push_back(vsLCL);			
@@ -71,111 +65,120 @@ int Vehicle::lane_from_d(double d) const{
 	return int(d/track_info::kLaneWidth);
 }
 
+double Vehicle::lane_to_d(int lane) const{
+	return track_info::kLaneWidth/2. + track_info::kLaneWidth*lane;
+}
+
+
 void Vehicle::process_trajectory(const std::vector<double>& map_waypoints_x,
   			     			const std::vector<double>& map_waypoints_y,
   				 			const std::vector<double>& map_waypoints_s,
 				 			const std::vector<double>& previous_path_x,
 				 			const std::vector<double>& previous_path_y,
 						   	int lane,
-						    double speed)
+						    double speed,
+							double horizon)
 {
 	int prev_size = previous_path_x.size();
 	
 	double ref_x = m_x;
 	double ref_y = m_y;
 	double ref_yaw = deg2rad(m_yaw);
-	
-	if(prev_size < 2){
-		double prev_x = m_x - cos(ref_yaw);
-		double prev_y = m_y - sin(ref_yaw); 
-		m_ptsx.push_back(prev_x);
-		m_ptsy.push_back(prev_y);
-		m_ptsx.push_back(m_x);
-		m_ptsy.push_back(m_y);
-	}	
-	else{
-		if(prev_size>2){			
-			//required to minimize jerk on lane change
-			//this helps to create smooth trajectory because spline will be build taking into account current trajectory
-			m_ptsx.push_back(previous_path_x[0]);
-			m_ptsy.push_back(previous_path_y[0]);
-		}
-		
-		ref_x = previous_path_x[prev_size - 1];
-		ref_y = previous_path_y[prev_size - 1];
-		double ref_x_prev = previous_path_x[prev_size - 2];
-		double ref_y_prev = previous_path_y[prev_size - 2];
-		ref_yaw = atan2(ref_y - ref_y_prev, ref_x - ref_x_prev);
-		m_ptsx.push_back(ref_x_prev);
-		m_ptsx.push_back(ref_x);
-		m_ptsy.push_back(ref_y_prev);
-		m_ptsy.push_back(ref_y);
-	}
-	
-	
-	double target_lane_d = track_info::kLaneWidth/2. + track_info::kLaneWidth*lane;
-	
-	vector<double> next_wp0 = getXY(m_s + 50, target_lane_d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
-	vector<double> next_wp1 = getXY(m_s + 100, target_lane_d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
-	vector<double> next_wp2 = getXY(m_s + 150, target_lane_d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
-
-	m_ptsx.push_back(next_wp0[0]);
-	m_ptsx.push_back(next_wp1[0]);
-	m_ptsx.push_back(next_wp2[0]);
-
-	m_ptsy.push_back(next_wp0[1]);
-	m_ptsy.push_back(next_wp1[1]);
-	m_ptsy.push_back(next_wp2[1]);
-	
-	pts_to_vehicle_coords({ref_x, ref_y}, ref_yaw);
-	
-	tk::spline s;
-	s.set_points(m_ptsx, m_ptsy);
-
+	vector<double> ptsx, ptsy;
 	
 	m_ptsx.clear();
 	m_ptsy.clear();
+	//1. Create reference points for spline
 	
-	//Point interval 0.02 sec
-	//max speed 50 mph
-	//m meters   1 sec
-	//x			0.02 sec
-	//max distance = 0.02*m/1
+	//Add first reference points, current if no previous trajectory exists, otherwise first 3 points of previous trajectory
+	//This required to make transition between update smooth, otherwise the car will be jerking
+	if(prev_size < 3){
+		double prev_x = m_x - cos(ref_yaw);
+		double prev_y = m_y - sin(ref_yaw); 
+		ptsx.push_back(prev_x);
+		ptsy.push_back(prev_y);
+		ptsx.push_back(m_x);
+		ptsy.push_back(m_y);
+	}	
+	else{
+		//required to minimize jerk on lane change
+		//this helps to create smooth trajectory because spline will be build taking into account current trajectory
+		ptsx.push_back(previous_path_x[0]);
+		ptsy.push_back(previous_path_y[0]);
+
+		double ref_x_prev = previous_path_x[1];
+		double ref_y_prev = previous_path_y[1];
+		
+		ref_x = previous_path_x[2];
+		ref_y = previous_path_y[2];
+				
+		ref_yaw = atan2(ref_y - ref_y_prev, ref_x - ref_x_prev);
+		
+		ptsx.push_back(ref_x_prev);
+		ptsx.push_back(ref_x);
+		ptsy.push_back(ref_y_prev);
+		ptsy.push_back(ref_y);
+	}
+	
+	double target_lane_d = track_info::kLaneWidth/2. + track_info::kLaneWidth*lane;
+	
+	//Add a few points based on interpolation of the track position (from map waypoints)
+	vector<double> next_wp0 = getXY(m_s + 30, target_lane_d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
+	vector<double> next_wp1 = getXY(m_s + 60, target_lane_d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
+	vector<double> next_wp2 = getXY(m_s + 90, target_lane_d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
+
+	
+	ptsx.push_back(next_wp0[0]);
+	ptsx.push_back(next_wp1[0]);
+	ptsx.push_back(next_wp2[0]);
+
+	ptsy.push_back(next_wp0[1]);
+	ptsy.push_back(next_wp1[1]);
+	ptsy.push_back(next_wp2[1]);
+	
+	//Translate all points to car coordinate system
+	pts_to_vehicle_coords({ref_x, ref_y}, ref_yaw, ptsx, ptsy);
+	
+	
+	//create spline
+	tk::spline s;
+	s.set_points(ptsx, ptsy);
+	ptsx.clear();
+	ptsy.clear();
 	
 	double ref_vel = mph2mps(speed);
-	double dt = 0.02;
+	double dt = vehicle_info::kDt;	
+	double dist_step = ref_vel*dt;//calculate distance step for target velocity
 	
-	double dist_step = ref_vel*dt;
+	int point_count = horizon/dt;
 	
-	vector<double> ptsx, ptsy;
-
-	for(int i=1; i <= 50 - previous_path_x.size(); ++i){
+	//2. Generate trajectory based on spline for future horizon
+	for(int i=1; i <= point_count - 3; ++i){
 		double x_point = i*dist_step;		
 		double y_point = s(x_point);
 		ptsx.push_back(x_point);
 		ptsy.push_back(y_point);	
 	}
 	
-	/*for(int i=1; i <= 50 - previous_path_x.size(); ++i){
-		double x_point = i*dist_step;		
-		double y_point = s(x_point);
-		ptsx.push_back(x_point);
-		ptsy.push_back(y_point);	
-	}*/
-	
+	//Convert points to global coordinate system
 	pts_to_global_coords({ref_x, ref_y}, ref_yaw, ptsx, ptsy);
 	
-	m_ptsx = previous_path_x;
-	m_ptsy = previous_path_y;
+	//add first 3 points from previous path to make smooth transition between previous and new path
+	for(int i=0;i<3 && i < previous_path_x.size();++i){
+		m_ptsx.push_back(previous_path_x[i]);
+		m_ptsy.push_back(previous_path_y[i]);
+	}
 	
+	//add all generated points from spline
 	for(int i=0;i<ptsx.size();++i){
 		m_ptsx.push_back(ptsx[i]);
 		m_ptsy.push_back(ptsy[i]);
-	}	
+	}
 }
 
+//unconditional next state switch
 Vehicle::VehicleState Vehicle::next_state(VehicleState current) const{
-
+	
 	if(current == vsKL){
 		int lane = lane_from_d();
 		if(lane>0){
@@ -201,50 +204,49 @@ void Vehicle::process(const vector<double>& map_waypoints_x,
 					 const vector<double>& previous_path_x,
 					 const vector<double>& previous_path_y,
 					 const std::vector<std::vector<double> >& sensor_fusion){	
-	
+
+	//max speed = speed limit -1%
 	double max_speed = track_info::kSpeedLimit - track_info::kSpeedLimit*0.01;
-	//double target_speed = max_speed;
+	
+	//assume keep lane initial state
 	if(m_state == vsKL){
-		//if(m_speed < max_speed){
-		//	double horizon = 50*0.02;		
-		//	target_speed = m_speed + vehicle_info::kMaxAccelS/2.*horizon;
-		//}
+		
+		//move with max speed until a vehicle appears ahead
 		Vehicle target_vehicle;
-		if(find_vehicle(target_vehicle, vpAhead, sensor_fusion)){
-			//target_speed = target_vehicle.m_speed;
-			//std::vector<VehicleState> states = successor_states();
-			//m_state = best_state(states);
-			m_state = next_state(m_state);
+		if(find_vehicle(target_vehicle, vpAhead, sensor_fusion, vehicle_info::kObserveDist)){
+			
+			//if vehicle ahead present find next best state from feasible states
+			std::vector<VehicleState> states = successor_states();
+			m_state = best_state(states, sensor_fusion);
 		}	
 	}
 	else if(m_state == vsPLCL || m_state == vsPLCR){
+		
 		Vehicle target_vehicle;
 		int target_lane = m_state == vsPLCL ? lane_from_d() - 1 : lane_from_d() + 1;
-		if(!find_vehicle(target_vehicle, vpAhead, sensor_fusion, 10, target_lane)){
-			cout<<"No vehicle detected, make transition"<<endl;
-			//std::vector<VehicleState> states = successor_states();
-			//m_state = best_state(states);			
-			//if(m_state == vsLCL || m_state == vsLCR){				
+		//check if there are vehicles on target line
+		if(!find_vehicle(target_vehicle, vpAhead, sensor_fusion, vehicle_info::kObserveDistOnLaneChange, target_lane) && 
+		   !find_vehicle(target_vehicle, vpBehind, sensor_fusion, vehicle_info::kObserveDistOnLaneChange, target_lane)){
+			//if no vehicles found on target lane switch to change lane state
 			m_target_lane = target_lane;
 			m_state = next_state(m_state);
-			//}
 		}
 		else{
-			cout<<"Vehicle on line:"<<target_lane<<" is blocking meneuvor from line:"<<lane_from_d()<<endl;
+			//otherwise switch back to keep lane change in case better choice will appear
+			m_state = vsKL;
 		}
 	}
 	else if(m_state == vsLCL || m_state == vsLCR){
-		if(lane_from_d() == m_target_lane){
+		//keep change lane state until the car in the lane center
+		if(fabs(m_d - lane_to_d(m_target_lane)) < track_info::kLaneWidth/5){
 			m_state = next_state(m_state);
-			//std::vector<VehicleState> states = successor_states();
-			//m_state = best_state(states);
 		}
 	}
 	
+	//Slowdown if vehicle ahead goes slower than our car
 	Vehicle target_vehicle;
-	if(find_vehicle(target_vehicle, vpAhead, sensor_fusion)){
-		//target_speed = target_vehicle.m_speed;		
-		m_target_speed = target_vehicle.m_speed;
+	if(find_vehicle(target_vehicle, vpAhead, sensor_fusion, vehicle_info::kDistToVehicleToSlowDown)){
+		m_target_speed = target_vehicle.m_speed - target_vehicle.m_speed*0.1;
 	}
 	else{
 		m_target_speed = max_speed;
@@ -252,10 +254,10 @@ void Vehicle::process(const vector<double>& map_waypoints_x,
 	
 	if(m_target_speed > max_speed){
 		m_target_speed = max_speed;
-	}
-	//double max_speed_inc_per_dt = mps2mph(vehicle_info::kMaxAccelS*0.02);
-	double max_speed_inc_per_dt = 1.5;
+	}	
 	
+	//try to smoothly increase/decrese speed to target speed
+	double max_speed_inc_per_dt = mps2mph(vehicle_info::kMaxAccelS*vehicle_info::kDt * 3);
 	double speed_diff = m_target_speed - m_speed;
 	if(fabs(speed_diff) < max_speed_inc_per_dt/2){
 		max_speed_inc_per_dt = 0.;
@@ -264,18 +266,69 @@ void Vehicle::process(const vector<double>& map_waypoints_x,
 		max_speed_inc_per_dt*=speed_diff/fabs(speed_diff);
 	}
 	
-	
 	double result_speed = m_speed + max_speed_inc_per_dt;
 	
+	//limit target speed by speed limit
 	if(result_speed > max_speed){
 		result_speed = max_speed;
 	}
-	cout<<"Target state:"<<state_name(m_state).c_str()<<endl;
-	cout<<"Target speed:"<<m_target_speed<<" current speed:"<<m_speed<<" max inc:"<<max_speed_inc_per_dt<<endl;
+	//cout<<"Target state:"<<state_name(m_state).c_str()<<endl;
+	//cout<<"Target speed:"<<m_target_speed<<" current speed:"<<m_speed<<" max inc:"<<max_speed_inc_per_dt<<endl;
 	
 	int lane = (m_state == vsLCL || m_state == vsLCR) ? m_target_lane : lane_from_d();
-	//int lane = (int(m_s)/100)%3;
+	
+	//create spline based trajectory with target speed and lane
 	process_trajectory(map_waypoints_x, map_waypoints_y, map_waypoints_s, previous_path_x, previous_path_y, lane, result_speed);
+}
+
+//0...1
+//calculate cost of distance between the nearest vehicle on the same lane
+//the higher the distance the lower the cost
+double distance_to_vehicle_cost(double distance_to_vehicle, double max_dist){
+	return 1. - distance_to_vehicle/max_dist;
+}
+
+//0 ... 1
+//calculate cost of vehicle speed in front of the car
+//the higher the speed the lower cost
+double vehicle_speed(double vehicle_speed){
+	if(vehicle_speed > track_info::kSpeedLimit){
+		return 0.;
+	}	
+	return (track_info::kSpeedLimit - vehicle_speed)/track_info::kSpeedLimit;
+}
+
+//calculate cost for the state based on surrounding vehicles, their distance and speed
+double Vehicle::state_cost(Vehicle::VehicleState state, const std::vector<std::vector<double> >& sensor_fusion) const{
+	double cost = 0.;
+	double speed_weight = 1.;//speed more important when lane change than dstance to vehicle
+	double distance_weight = 0.9;
+	
+	if(state == vsKL){
+		Vehicle target_vehicle;
+		if(find_vehicle(target_vehicle, vpAhead, sensor_fusion, vehicle_info::kObserveDist, lane_from_d())){
+			cost += speed_weight*vehicle_speed(target_vehicle.m_speed);
+			cost += distance_weight*distance_to_vehicle_cost(fabs(m_s - target_vehicle.m_s), vehicle_info::kObserveDist);
+		}
+	}
+	else if(state == vsPLCL || state == vsPLCR){
+		Vehicle target_vehicle;
+		int target_lane = state == vsPLCL ? lane_from_d() - 1 : lane_from_d() + 1;
+		
+		double cost_ahead = 0.;
+		if(find_vehicle(target_vehicle, vpAhead, sensor_fusion, vehicle_info::kObserveDist*1.5, target_lane)){			
+			cost_ahead += speed_weight*vehicle_speed(target_vehicle.m_speed);
+			cost_ahead += distance_weight*distance_to_vehicle_cost(fabs(m_s - target_vehicle.m_s), vehicle_info::kObserveDist*1.5);
+		}
+		double cost_behind = 0.;
+
+		if(find_vehicle(target_vehicle, vpAhead, sensor_fusion, vehicle_info::kObserveDist/2., target_lane)){			
+			cost_behind += speed_weight*vehicle_speed(target_vehicle.m_speed);
+			cost_behind += distance_weight*distance_to_vehicle_cost(fabs(m_s - target_vehicle.m_s), vehicle_info::kObserveDist/2.);
+		}
+		cost = max(cost_behind, cost_ahead);
+	}
+	return cost;
 }
 
 std::string Vehicle::state_name(Vehicle::VehicleState state) const{
@@ -289,270 +342,48 @@ std::string Vehicle::state_name(Vehicle::VehicleState state) const{
 	return "Invalid state";
 }
 
+//return best state from feasible states beased on cost of each state and sensor fusion data
 Vehicle::VehicleState Vehicle::best_state(const std::vector<VehicleState>& states, const std::vector<std::vector<double> >& sensor_fusion) const{
-	/*Vehicle target_vehicle;
+	VehicleState result_state = vsKL;
+	float min_cost = 100.;
 	for(const auto& state : states){
-		
-		if(!find_vehicle(target_vehicle, vpAhead, sensor_fusion, 30, vsPLCL ? lane_from_d() - 1 : lane_from_d() + 1)){
-			std::vector<VehicleState> states = successor_states();
-			m_state = best_state(states);			
-			if(m_state == vsLCL || m_state == vsLCR){				
-				m_target_lane = vsPLCL ? lane_from_d() - 1 : lane_from_d() + 1;
-			}
+		float cost = state_cost(state, sensor_fusion);
+		//cout<<"State "<<state_name(state)<<" cost:"<<cost<<endl;
+		if(cost < min_cost){
+			min_cost = cost;
+			result_state = state;
 		}
-		if(find_vehicle(target_vehicle, vpAhead, sensor_fusion)){
-
-		}
-
-	}*/
-	return vsKL;
+	}
+	return result_state;
 }
 
+//transform coordinates to vehicle coordinate system
 void Vehicle::pts_to_vehicle_coords(const std::vector<double>& origin_xy, double yaw, std::vector<double>& ptsx, std::vector<double>& ptsy){
 	double ref_yaw = yaw;
 	double ref_x = origin_xy[0];
-	double ref_y = origin_xy[1];
-	//cout<<"points to vehicle"<<" refx="<<ref_x<<" ref_y="<<ref_y<<" ref_yaw="<<ref_yaw<<endl;
-	
-	for(int i=0;i<m_ptsx.size();++i){
+	double ref_y = origin_xy[1];	
+	for(int i=0;i<ptsx.size();++i){
 		double shift_x = ptsx[i] - ref_x;
 		double shift_y = ptsy[i] - ref_y;
 		ptsx[i] = shift_x * cos(0 - ref_yaw) - shift_y * sin(0 - ref_yaw);
 	    ptsy[i] = shift_x * sin(0 - ref_yaw) + shift_y * cos(0 - ref_yaw);
-		//cout<<i<<" ptsx="<<m_ptsx[i]<<" ptsy="<<m_ptsy[i]<<endl;
 	}
 }
+
+//transform coordinates to global coordinate system
 void Vehicle::pts_to_global_coords(const std::vector<double>& origin_xy, double yaw, std::vector<double>& ptsx, std::vector<double>& ptsy){
 	double ref_yaw = yaw;
 	double ref_x = origin_xy[0];
-	double ref_y = origin_xy[1];
-	//cout<<"points to global"<<" refx="<<ref_x<<" ref_y="<<ref_y<<" ref_yaw="<<ref_yaw<<endl;
-	
+	double ref_y = origin_xy[1];	
 	for(int i=0;i<ptsx.size();++i){
 		double x = ptsx[i];
 		double y = ptsy[i];	
 		ptsx[i] = x * cos(0. - ref_yaw) + y * sin(0. - ref_yaw) + ref_x;
 		ptsy[i] = -x * sin(0. - ref_yaw) + y * cos(0. - ref_yaw) + ref_y;
-		//cout<<i<<" ptsx="<<m_ptsx[i]<<" ptsy="<<m_ptsy[i]<<endl;
 	}	
 }
 
-
-void Vehicle::process2(const vector<double>& map_waypoints_x,
-  			          const vector<double>& map_waypoints_y,
-  				     const vector<double>& map_waypoints_s,
-					 const vector<double>& previous_path_x,
-					 const vector<double>& previous_path_y){
-	
-	/*double dist_inc = 0.3;
-	for(int i = 0; i < 50; i++){
-		double next_s = m_s + (i+1)*dist_inc;
-		double next_d = 6;
-		vector<double> xy = getXY(next_s, next_d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
-		m_ptsx.push_back(xy[0]);
-		m_ptsy.push_back(xy[1]);
-	}*/
-	int prev_size = previous_path_x.size();
-	
-	double ref_x = m_x;
-	double ref_y = m_y;
-	double ref_yaw = deg2rad(m_yaw);
-	
-	/*if(prev_size < 2){
-	
-		double prev_x = m_x - cos(ref_yaw);
-		double prev_y = m_y - sin(ref_yaw); 
-		m_ptsx.push_back(prev_x);
-		m_ptsy.push_back(prev_y);
-		m_ptsx.push_back(m_x);
-		m_ptsy.push_back(m_y);
-	}	
-	else{
-		ref_x = previous_path_x[prev_size - 1];
-		ref_y = previous_path_y[prev_size - 1];
-		double ref_x_prev = previous_path_x[prev_size - 2];
-		double ref_y_prev = previous_path_y[prev_size - 2];
-		ref_yaw = atan2(ref_y - ref_y_prev, ref_x - ref_x_prev);
-
-		m_ptsx.push_back(ref_x_prev);
-		m_ptsx.push_back(ref_x);
-		m_ptsy.push_back(ref_y_prev);
-		m_ptsy.push_back(ref_y);
-	}*/
-	
-		cout<<"prev size:"<<prev_size<<endl;
-
-	
-	if(prev_size>100){
-		m_ptsx = previous_path_x;
-		m_ptsy = previous_path_y;
-		return;
-	}
-	
-	
-	
-	int lane = 1;
-	
-	vector<double> start_wp = getXY(m_s, 2+4*lane, map_waypoints_s, map_waypoints_x, map_waypoints_y);
-	m_ptsx.push_back(start_wp[0]);
-	m_ptsy.push_back(start_wp[1]);
-
-
-	
-	vector<double> next_wp0 = getXY(m_s + 30, 2+4*lane, map_waypoints_s, map_waypoints_x, map_waypoints_y);
-	vector<double> next_wp1 = getXY(m_s + 60, 2+4*lane, map_waypoints_s, map_waypoints_x, map_waypoints_y);
-	vector<double> next_wp2 = getXY(m_s + 90, 2+4*lane, map_waypoints_s, map_waypoints_x, map_waypoints_y);
-
-	m_ptsx.push_back(next_wp0[0]);
-	m_ptsx.push_back(next_wp1[0]);
-	m_ptsx.push_back(next_wp2[0]);
-
-	m_ptsy.push_back(next_wp0[1]);
-	m_ptsy.push_back(next_wp1[1]);
-	m_ptsy.push_back(next_wp2[1]);
-	
-	pts_to_vehicle_coords({ref_x, ref_y}, ref_yaw);
-	
-	tk::spline s;
-	s.set_points(m_ptsx, m_ptsy);
-	
-	//double target_x = 30.;
-	//double target_y = s(target_x);
-	//double target_dist = sqrt(pow(target_x,2.) + pow(target_y,2.));
-	double target_dist = 50.;
-	
-	
-	//Point interval 0.02 sec
-	//max speed 50 mph
-	//m meters   1 sec
-	//x			0.02 sec
-	//max distance = 0.02*m/1
-	
-	double ref_vel = mph2mps(10.5);
-	cout<<"10 mph:"<<mph2mps(10.)<<endl;
-	double dt = 0.02;
-	
-	double dist_step = ref_vel*dt;
-	cout<<"Distance step=1"<<dist_step<<endl;
-	
-	//cout<<"ref vel:"<<ref_vel<<" N="<<N<<endl;
-	
-	double x_prev = 0.;
-	double x = 0.;
-	double y_prev = 0.;
-	double y = 0.;
-	
-	double dist_cnt = 0;
-	int cnt = 1;
-	
-	m_ptsx.clear();
-	m_ptsy.clear();
-	
-	while(dist_cnt < target_dist){
-		x = cnt*dist_step;
-		y = s(x);
-		m_ptsx.push_back(x);
-		m_ptsy.push_back(y);
-		double dist = distance(x, y, x_prev, y_prev);
-		//cout<<"x="<<x<<" y="<<y<<" dist="<<dist<<endl;
-		dist_cnt += dist;
-		x_prev = x;
-		y_prev = y;
-		cnt++;
-	}
-	
-	/*m_ptsx.clear();
-	m_ptsy.clear();
-	double ref_vel = 15;
-	double target_x = 30.;
-	double target_y = s(target_x);
-	double target_dist = sqrt(pow(target_x,2.) + pow(target_y,2.));
-
-	for(int i=1; i<= 50-previous_path_x.size(); ++i){
-		double N = target_dist / (0.02 * ref_vel / 2.24);
-		double x_point = i*target_x/N;
-		//cout<<"Genx:"<<x_point<<endl;
-		double y_point = s(x_point);
-
-		double x_ref = x_point;
-		double y_ref = y_point;
-
-		x_point = x_ref*cos(ref_yaw)-y_ref*sin(ref_yaw);
-		y_point = x_ref*sin(ref_yaw)+y_ref*cos(ref_yaw);
-
-		x_point += ref_x;
-		y_point += ref_y;
-
-		m_ptsx.push_back(x_point);
-		m_ptsy.push_back(y_point);	
-	}*/
-	
-	pts_to_global_coords({ref_x, ref_y}, ref_yaw);
-	double x0 = ref_x;
-	double y0 = ref_y;
-	cout<<fixed;
-	cout<<setprecision(2);
-	cout<<setw(6);
-	
-	for(int i=0;i<m_ptsx.size();++i){
-		//cout<<i<<" x="<<m_ptsx[i]<<"\ty="<<m_ptsy[i]<<"\tdist="<<distance(x0, y0, m_ptsx[i], m_ptsy[i])<<endl;
-		x0 = m_ptsx[i];
-		y0 = m_ptsy[i];
-	}
-	//cout<<"result points:"<<m_ptsx.size()<<endl;
-	
-	/*for(int i=1; i<= 50-previous_path_x.size(); ++i){
-		double x_point = x_add_on + target_x/N;
-		double y_point = s(x_point);
-
-		double x_ref = x_point;
-		double y_ref = y_point;
-
-		x_point = x_ref*cos(ref_yaw)-y_ref*sin(ref_yaw);
-		y_point = x_ref*sin(ref_yaw)+y_ref*cos(ref_yaw);
-
-		x_point += ref_x;
-		y_point += ref_y;
-
-		next_x_vals.push_back(x_point);
-		next_y_vals.push_back(y_point);	
-	}*/
-}
-
-void Vehicle::pts_to_vehicle_coords(const std::vector<double>& origin_xy, double yaw){
-	//double ref_yaw = deg2rad(yaw);
-	double ref_yaw = yaw;
-	double ref_x = origin_xy[0];
-	double ref_y = origin_xy[1];
-	//cout<<"points to vehicle"<<" refx="<<ref_x<<" ref_y="<<ref_y<<" ref_yaw="<<ref_yaw<<endl;
-	for(int i=0;i<m_ptsx.size();++i){
-		double shift_x = m_ptsx[i] - ref_x;
-		double shift_y = m_ptsy[i] - ref_y;
-		
-		m_ptsx[i] = shift_x * cos(0 - ref_yaw) - shift_y * sin(0 - ref_yaw);
-	    m_ptsy[i] = shift_x * sin(0 - ref_yaw) + shift_y * cos(0 - ref_yaw);
-		//cout<<i<<" ptsx="<<m_ptsx[i]<<" ptsy="<<m_ptsy[i]<<endl;
-
-	}
-}
-
-void Vehicle::pts_to_global_coords(const std::vector<double>& origin_xy, double yaw){
-	//double ref_yaw = deg2rad(yaw);
-	double ref_yaw = yaw;
-	double ref_x = origin_xy[0];
-	double ref_y = origin_xy[1];
-	//cout<<"points to global"<<" refx="<<ref_x<<" ref_y="<<ref_y<<" ref_yaw="<<ref_yaw<<endl;
-	for(int i=0;i<m_ptsx.size();++i){
-		double x = m_ptsx[i];
-		double y = m_ptsy[i];
-		
-		m_ptsx[i] = x * cos(0. - ref_yaw) + y * sin(0. - ref_yaw) + ref_x;
-		m_ptsy[i] = -x * sin(0. - ref_yaw) + y * cos(0. - ref_yaw) + ref_y;
-
-		//cout<<i<<" ptsx="<<m_ptsx[i]<<" ptsy="<<m_ptsy[i]<<endl;
-	}	
-}
-
+//find vehicle on the specified lane ahead or behind the car position
 bool Vehicle::find_vehicle(Vehicle& target_vehicle, VehiclePosition check_position, const vector<vector<double> >& sensor_fusion, double dist, int lane) const{
 	double min_s = dist;
 	bool found = false;
@@ -565,9 +396,9 @@ bool Vehicle::find_vehicle(Vehicle& target_vehicle, VehiclePosition check_positi
 		double vy = car_data[sf_fields::kVy];
 		double x = car_data[sf_fields::kX];
 		double y = car_data[sf_fields::kY];
-		double target_d = lane == -1 ? lane_from_d() : track_info::kLaneWidth/2 + lane*track_info::kLaneWidth;
+		int target_lane =  lane == -1 ? lane_from_d() : lane;
 		
-		if(target_d != lane_from_d(d)){
+		if(target_lane != lane_from_d(d)){
 			continue;
 		}
 		//TODO what about second loop, how to pass 0?
@@ -577,9 +408,8 @@ bool Vehicle::find_vehicle(Vehicle& target_vehicle, VehiclePosition check_positi
 		)) {
 			found = true;
 			min_s = s_diff;
-			target_vehicle = Vehicle(s, d, 0., sqrt(vx*vx + vy*vy), x, y);			
-			cout<<"found vehicle: "<<id<<" speed: "<<target_vehicle.m_speed<<" vx:"<<vx<<" vy:"<<vy<<endl;
-
+			target_vehicle = Vehicle(s, d, 0., mps2mph(sqrt(vx*vx + vy*vy)), x, y);			
+			//cout<<"found vehicle: "<<id<<" lane:"<<target_lane<<" dist:"<<s_diff<<" speed: "<<target_vehicle.m_speed<<endl;
 		}		
 	}
 	return found;

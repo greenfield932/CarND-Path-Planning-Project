@@ -144,56 +144,6 @@ vector<double> getXY(double s, double d, const vector<double> &maps_s, const vec
 
 }
 
-
-vector<double> JMT(vector< double> start, vector <double> end, double T)
-{
-    /*
-    Calculate the Jerk Minimizing Trajectory that connects the initial state
-    to the final state in time T.
-
-    INPUTS
-
-    start - the vehicles start location given as a length three array
-        corresponding to initial values of [s, s_dot, s_double_dot]
-
-    end   - the desired end state for vehicle. Like "start" this is a
-        length three array.
-
-    T     - The duration, in seconds, over which this maneuver should occur.
-
-    OUTPUT 
-    an array of length 6, each value corresponding to a coefficent in the polynomial 
-    s(t) = a_0 + a_1 * t + a_2 * t**2 + a_3 * t**3 + a_4 * t**4 + a_5 * t**5
-
-    EXAMPLE
-
-    > JMT( [0, 10, 0], [10, 10, 0], 1)
-    [0.0, 10.0, 0.0, 0.0, 0.0, 0.0]
-    */
-
-    double si = start[0];
-    double si_dot = start[1];
-    double si_dot_dot = start[2];
-    
-    double sf = end[0];
-    double sf_dot = end[1];
-    double sf_dot_dot = end[2];
-    
-    Eigen::MatrixXd MT(3,3);
-    MT << pow(T,3.),     pow(T, 4.),    pow(T, 5.),
-       3.*pow(T, 2.), 4.*pow(T,3.),  5.*pow(T,4.),
-       6.*T,          12.*pow(T,2.), 20.*pow(T,3.);
-       
-    Eigen::VectorXd VS(3);
-    VS << sf - (si + si_dot * T + 0.5 * si_dot_dot*pow(T,2.)),
-       sf_dot - (si_dot + si_dot_dot * T),
-       sf_dot_dot - si_dot_dot;
-    
-    Eigen::VectorXd alpha = MT.inverse() * VS;
-    return {si, si_dot, 0.5*si_dot_dot, alpha(0), alpha(1), alpha(2)};    
-}
-
-
 double mph2mps(double mph){
 	return mph*0.44704;
 }

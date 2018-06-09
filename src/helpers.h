@@ -13,14 +13,19 @@ namespace sf_fields{//sensor fusion fields
 }
 
 namespace track_info{
-	const double kSpeedLimit = 50.;
-	const double kLaneWidth = 4.;
+	const double kSpeedLimit = 50.;//mph
+	const double kLaneWidth = 4.;//meters
 	const int kLaneCount = 3;
 }
 
 namespace vehicle_info{
 	const double kMaxAccelS = 10;//m/s^2
 	const double kMaxAccelD = 10;//m/s^2
+	const double kDt = 0.02;//s
+	const double kObserveDist = 30.;//m
+	const double kObserveDistOnLaneChange = 10.;//m
+	const double kDistToVehicleToSlowDown = 15.;//m
+	
 }
 
 // For converting back and forth between radians and degrees.
@@ -40,10 +45,10 @@ std::vector<double> getFrenet(double x, double y, double theta, const std::vecto
 // Transform from Frenet s,d coordinates to Cartesian x,y
 std::vector<double> getXY(double s, double d, const std::vector<double> &maps_s, const std::vector<double> &maps_x, const std::vector<double> &maps_y);
 
-std::vector<double> JMT(std::vector< double> start, std::vector <double> end, double T);
+//miles per hour to meters per second
+double mph2mps(double mph);
 
-double mph2mps(double mph);//miles per hour to meters per second
-double mps2mph(double mps);//meters per second to miles per hour
-	
+//meters per second to miles per hour
+double mps2mph(double mps);
 
 #endif
