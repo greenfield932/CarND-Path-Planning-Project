@@ -66,12 +66,11 @@ int main() {
   	map_waypoints_dx.push_back(d_x);
   	map_waypoints_dy.push_back(d_y);
   }
+  
+  Vehicle vehicle;
 
-	int lane = 1;
-	double ref_vel = 49.5;
 
-
-  h.onMessage([&ref_vel, &map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy, &lane](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+  h.onMessage([&vehicle, &map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -114,8 +113,9 @@ int main() {
           	vector<double> next_x_vals;
           	vector<double> next_y_vals;
           	        
-            Vehicle vehicle(car_s, car_d, car_yaw, car_speed, car_x, car_y);
-            vehicle.process(map_waypoints_x, map_waypoints_y, map_waypoints_s, previous_path_x, previous_path_y);
+            //Vehicle vehicle(car_s, car_d, car_yaw, car_speed, car_x, car_y);
+            vehicle.update(car_s, car_d, car_yaw, car_speed, car_x, car_y);
+            vehicle.process(map_waypoints_x, map_waypoints_y, map_waypoints_s, previous_path_x, previous_path_y, sensor_fusion);
 
             next_x_vals = vehicle.ptsx();
             next_y_vals = vehicle.ptsy();      

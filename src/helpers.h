@@ -2,15 +2,26 @@
 #define _HELPERS_H_
 #include <math.h>
 #include <vector>
-enum class sf_fields{//sensor fusion fields
-	kId,
-	kX,
-	kY, 
-	kVx,
-	kVy,
-	kS,
-	kD	
-};
+namespace sf_fields{//sensor fusion fields
+	const int kId = 0;
+	const int kX = 1;
+	const int kY = 2;
+	const int kVx = 3;
+	const int kVy = 4;
+	const int kS = 5;
+	const int kD = 6;
+}
+
+namespace track_info{
+	const double kSpeedLimit = 50.;
+	const double kLaneWidth = 4.;
+	const int kLaneCount = 3;
+}
+
+namespace vehicle_info{
+	const double kMaxAccelS = 10;//m/s^2
+	const double kMaxAccelD = 10;//m/s^2
+}
 
 // For converting back and forth between radians and degrees.
 constexpr double pi(){ 

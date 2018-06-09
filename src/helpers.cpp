@@ -195,10 +195,9 @@ vector<double> JMT(vector< double> start, vector <double> end, double T)
 
 
 double mph2mps(double mph){
-	//return mph*1.60934/1000./3600.;
 	return mph*0.44704;
 }
 
 double mps2mph(double mps){
-	mps*3600.*1000./1.60934;
+	return mps/0.44704;
 }
