@@ -74,7 +74,7 @@ The following video represents the ability of the car to change lanes.
 
 Behavior planning implemented using finite state machines
 
-![alt text][image9]
+![alt text][image10]
 
 Basic flow of transition function implemented in [vehicle.cpp lines: 215-234](src/vehicle.cpp#L205). Some of states change based on logic conditions and 
 some based on cost functions. There were implemented 2 cost functions: distance_to_vehicle_cost [vehicle.cpp lines: 277-279](src/vehicle.cpp#L277)
