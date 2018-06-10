@@ -50,24 +50,23 @@ The following video represents the ability of the car to change lanes.
 ## Implementation details on trajectory generation
 
 1. Calculate middle points at specified coordinates si based on the track waypoints and their corresponding representation on the vehicle’s lane 
-[vehicle.cpp lines: 90-134] (src/vehicle.cpp#L90)
+[vehicle.cpp lines: 90-134](src/vehicle.cpp#L90)
 
 ![alt text][image7]
 
 2. Convert Frenet s,d coordinates of the points from steps1 to global x,y coordinates (vehicle.cpp lines: 90-134)
 3. Convert x,y coordinates to vehicle’s coordinates x’, y’ relative to reference point (vehicle’s position) 
 (shifting all points relative to reference point and [apply rotation](https://en.wikipedia.org/wiki/Rotation_matrix) with vehicle’s yaw angle) 
-
 4. Make a [spline](http://kluge.in-chemnitz.de/opensource/spline) F(x’) in the vehicle’s coordinate system using points from step3 
 
-
 ![alt text][image8]
+
+5. Using F(x’) generate trajectory points using dx calculated using refresh rate dt, horizon and desired speed. 
+6. Convert trajectory points back to global coordinates from map coordinates
 
 ![alt text][image9]
 
 ## Implementation details on behavior planning
-
-
 
 ## Basic Build Instructions
 
