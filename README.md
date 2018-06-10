@@ -54,17 +54,20 @@ The following video represents the ability of the car to change lanes.
 
 ![alt text][image7]
 
-2. Convert Frenet s,d coordinates of the points from steps1 to global x,y coordinates (vehicle.cpp lines: 90-134)
+2. Convert Frenet s,d coordinates of the points from steps1 to global x,y coordinates [helpers.cpp lines: 122-124](src/vehicle.cpp#L122)
 3. Convert x,y coordinates to vehicle’s coordinates x’, y’ relative to reference point (vehicle’s position) 
-(shifting all points relative to reference point and [apply rotation](https://en.wikipedia.org/wiki/Rotation_matrix) with vehicle’s yaw angle) 
-4. Make a [spline](http://kluge.in-chemnitz.de/opensource/spline) F(x’) in the vehicle’s coordinate system using points from step3 
+(shifting all points relative to reference point and [apply rotation](https://en.wikipedia.org/wiki/Rotation_matrix) with vehicle’s yaw angle)
+[vehicle.cpp lines: 135](src/vehicle.cpp#L135)
+4. Make a [spline](http://kluge.in-chemnitz.de/opensource/spline) F(x’) in the vehicle’s coordinate system using points from step3 [vehicle.cpp lines: 138-139](src/vehicle.cpp#L138)
 
 ![alt text][image8]
 
-5. Using F(x’) generate trajectory points using dx calculated using refresh rate dt, horizon and desired speed. 
-6. Convert trajectory points back to global coordinates from map coordinates
+5. Using F(x’) generate trajectory points using dx calculated using refresh rate dt, horizon and desired speed. [vehicle.cpp lines: 143-154](src/vehicle.cpp#L143)
+6. Convert trajectory points back to global coordinates from map coordinates. [vehicle.cpp lines: 157](src/vehicle.cpp#L157)
 
 ![alt text][image9]
+
+(Implementation details contains only details on basic flow, more complex flow including trajectory adjusting between refresh steps not included).
 
 ## Implementation details on behavior planning
 
