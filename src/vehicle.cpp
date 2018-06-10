@@ -14,25 +14,23 @@ Vehicle::Vehicle(double s, double d, double yaw, double speed, double x, double 
 	m_y(y),
 	m_state(vsKL),
 	m_target_lane(-1),
-	m_target_speed(track_info::kSpeedLimit)
-{
+	m_target_speed(track_info::kSpeedLimit) {
 	
 }
 
-void Vehicle::update(double s, double d, double yaw, double speed, double x, double y){
+void Vehicle::update(double s, double d, double yaw, double speed, double x, double y) {
+	
 	m_s = s;
 	m_d = d;
 	m_yaw = yaw;
 	m_speed = speed;
 	m_x = x;
 	m_y = y;
-	
 	m_ptsx.clear();
 	m_ptsy.clear();
 }
 
-std::vector<Vehicle::VehicleState> Vehicle::successor_states() const{
-
+std::vector<Vehicle::VehicleState> Vehicle::successor_states() const {
 	std::vector<VehicleState> states;
 	states.push_back(vsKL);
 	if(m_state == vsKL){
@@ -51,21 +49,20 @@ std::vector<Vehicle::VehicleState> Vehicle::successor_states() const{
 	else if(m_state == vsPLCR){
 		states.push_back(vsPLCR);					
 		states.push_back(vsLCR);					
-
 	}
 	
 	return std::move(states);
 }
 
-int Vehicle::lane_from_d() const{
+int Vehicle::lane_from_d() const {
 	return lane_from_d(m_d);
 }
 
-int Vehicle::lane_from_d(double d) const{
+int Vehicle::lane_from_d(double d) const {
 	return int(d/track_info::kLaneWidth);
 }
 
-double Vehicle::lane_to_d(int lane) const{
+double Vehicle::lane_to_d(int lane) const {
 	return track_info::kLaneWidth/2. + track_info::kLaneWidth*lane;
 }
 
@@ -77,8 +74,7 @@ void Vehicle::process_trajectory(const std::vector<double>& map_waypoints_x,
 				 			const std::vector<double>& previous_path_y,
 						   	int lane,
 						    double speed,
-							double horizon)
-{
+							double horizon) {
 	int prev_size = previous_path_x.size();
 	
 	double ref_x = m_x;
@@ -127,7 +123,6 @@ void Vehicle::process_trajectory(const std::vector<double>& map_waypoints_x,
 	vector<double> next_wp1 = getXY(m_s + 60, target_lane_d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
 	vector<double> next_wp2 = getXY(m_s + 90, target_lane_d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
 
-	
 	ptsx.push_back(next_wp0[0]);
 	ptsx.push_back(next_wp1[0]);
 	ptsx.push_back(next_wp2[0]);
@@ -139,7 +134,6 @@ void Vehicle::process_trajectory(const std::vector<double>& map_waypoints_x,
 	//Translate all points to car coordinate system
 	pts_to_vehicle_coords({ref_x, ref_y}, ref_yaw, ptsx, ptsy);
 	
-	
 	//create spline
 	tk::spline s;
 	s.set_points(ptsx, ptsy);
@@ -149,7 +143,6 @@ void Vehicle::process_trajectory(const std::vector<double>& map_waypoints_x,
 	double ref_vel = mph2mps(speed);
 	double dt = vehicle_info::kDt;	
 	double dist_step = ref_vel*dt;//calculate distance step for target velocity
-	
 	int point_count = horizon/dt;
 	
 	//2. Generate trajectory based on spline for future horizon
@@ -194,34 +187,31 @@ Vehicle::VehicleState Vehicle::next_state(VehicleState current) const{
 	else if(m_state == vsPLCR){
 		return vsLCR;
 	}
-	return vsKL;	
 	
+	return vsKL;	
 }
 
 void Vehicle::process(const vector<double>& map_waypoints_x,
-  			          const vector<double>& map_waypoints_y,
-  				     const vector<double>& map_waypoints_s,
-					 const vector<double>& previous_path_x,
-					 const vector<double>& previous_path_y,
-					 const std::vector<std::vector<double> >& sensor_fusion){	
+  			              const vector<double>& map_waypoints_y,
+  				            const vector<double>& map_waypoints_s,
+					            const vector<double>& previous_path_x,
+					            const vector<double>& previous_path_y,
+					            const std::vector<std::vector<double> >& sensor_fusion){	
 
 	//max speed = speed limit -1%
 	double max_speed = track_info::kSpeedLimit - track_info::kSpeedLimit*0.01;
 	
 	//assume keep lane initial state
 	if(m_state == vsKL){
-		
 		//move with max speed until a vehicle appears ahead
 		Vehicle target_vehicle;
 		if(find_vehicle(target_vehicle, vpAhead, sensor_fusion, vehicle_info::kObserveDist)){
-			
 			//if vehicle ahead present find next best state from feasible states
 			std::vector<VehicleState> states = successor_states();
 			m_state = best_state(states, sensor_fusion);
 		}	
 	}
-	else if(m_state == vsPLCL || m_state == vsPLCR){
-		
+	else if(m_state == vsPLCL || m_state == vsPLCR){		
 		Vehicle target_vehicle;
 		int target_lane = m_state == vsPLCL ? lane_from_d() - 1 : lane_from_d() + 1;
 		//check if there are vehicles on target line

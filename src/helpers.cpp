@@ -58,10 +58,10 @@ int NextWaypoint(double x, double y, double theta, const vector<double> &maps_x,
   if(angle > pi()/4)
   {
     closestWaypoint++;
-  if (closestWaypoint == maps_x.size())
-  {
-    closestWaypoint = 0;
-  }
+  	if (closestWaypoint == maps_x.size())
+  	{
+    	closestWaypoint = 0;
+  	}
   }
 
   return closestWaypoint;

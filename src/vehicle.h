@@ -5,7 +5,6 @@
 class Vehicle{
 	public:
 	
-	
 	Vehicle(double s = 0., double d = 0., double yaw = 0., double speed = 0., double x = 0., double y = 0.);
 	
 	//update vehicle kinematics and position
@@ -13,12 +12,11 @@ class Vehicle{
 	
 	//process trajectory generation with respect to surrounding objects
 	void process(const std::vector<double>& map_waypoints_x,
-  			     const std::vector<double>& map_waypoints_y,
-  				 const std::vector<double>& map_waypoints_s,
-				 const std::vector<double>& previous_path_x,
-				 const std::vector<double>& previous_path_y,
-				 const std::vector<std::vector<double> >& sensor_fusion
-				);
+  			       const std::vector<double>& map_waypoints_y,
+  				     const std::vector<double>& map_waypoints_s,
+				       const std::vector<double>& previous_path_x,
+				       const std::vector<double>& previous_path_y,
+				       const std::vector<std::vector<double> >& sensor_fusion);
 	
 
 	
@@ -83,17 +81,17 @@ private:
 	VehicleState best_state(const std::vector<VehicleState>& states, const std::vector<std::vector<double> >& sensor_fusion) const;
 
 	//transform coordinates to vehicle coordinate system
-	void pts_to_vehicle_coords(const std::vector<double>& origin_xy, double yaw, std::vector<double>& ptsx, std::vector<double>& ptsy);
+	void pts_to_vehicle_coords(const std::vector<double>& origin_xy, double yaw, std::vector<double>& ptsx, std::vector<double>& ptsy) const;
 	
 	//transform coordinates to global coordinate system
-	void pts_to_global_coords(const std::vector<double>& origin_xy, double yaw, std::vector<double>& ptsx, std::vector<double>& ptsy);
+	void pts_to_global_coords(const std::vector<double>& origin_xy, double yaw, std::vector<double>& ptsx, std::vector<double>& ptsy) const;
 	
-	std::vector<double> m_ptsx;
-	std::vector<double> m_ptsy;
-	double m_s, m_d, m_yaw, m_speed, m_x, m_y;
-	int m_target_lane;
-	double m_target_speed;	
-	VehicleState m_state;
+	std::vector<double> m_ptsx;//result points of trajectory, x
+	std::vector<double> m_ptsy;//result points of trajectory, y
+	double m_s, m_d, m_yaw, m_speed, m_x, m_y; // vehicle kinematics/position values
+	int m_target_lane;//used when lane change processing
+	double m_target_speed;	//variable to update car speed over frames
+	VehicleState m_state;   //state of the vehicle (FSM)
 };
 
 
