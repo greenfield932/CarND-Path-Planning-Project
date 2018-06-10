@@ -23,20 +23,23 @@ Input data include vehicle position values (x, y, s, d, yaw) and speed values. S
 2. The car drives according to the speed limit.
 3. Max Acceleration and Jerk are not Exceeded.
 
-The following video represents a car driving over 4.32 miles without incident, speed lower than 50 mph limit and not acceleration and jerk exceeded during the test.
+The following video represents a car driving over 4.32 miles without incident, speed lower than 50 mph limit and no acceleration or jerk exceeded during the test.
 ![alt text][image1]
 
 4. Car does not have collisions.
+
 The following video represents an ability to handle collisions. When the car became to close to a slow vehicle the car's speed adjusted according to the vehicle ahead speed.
 
 ![alt text][image4]
 
 5. The car stays in its lane, except for the time between changing lanes.
+
 The following video represents the ability of the car to keep lane on a slightly curved road.
 
 ![alt text][image5]
 
 6. The car is able to change lanes
+
 The following video represents the ability of the car to change lanes.
 
 ![alt text][image6]
