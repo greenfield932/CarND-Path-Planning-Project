@@ -32,7 +32,7 @@ The following video represents a car driving over 4.32 miles without incident, s
 
 4. Car does not have collisions.
 
-The following video represents an ability to handle collisions. When the car became to close to a slow vehicle the car's speed adjusted according to the vehicle ahead speed.
+The following video represents an ability to handle collisions. When the car became too close to a slow vehicle the car's speed adjusted according to the vehicle ahead speed.
 
 ![alt text][image4]
 
