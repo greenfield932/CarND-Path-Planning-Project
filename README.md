@@ -7,6 +7,7 @@
 [image7]: ./images/model1.png
 [image8]: ./images/model2.png
 [image9]: ./images/model3.png
+[image10]: ./images/FSM.png
 
 ### Goals
 The main goal of the project is to safely navigate around a virtual highway with other traffic that is driving +-10 MPH of the 50 MPH speed limit.
@@ -70,6 +71,16 @@ The following video represents the ability of the car to change lanes.
 (Implementation details contains only details on basic flow, more complex flow including trajectory adjusting between refresh steps not included).
 
 ## Implementation details on behavior planning
+
+Behavior planning implemented using finite state machines
+
+![alt text][image9]
+
+Basic flow of transition function implemented in [vehicle.cpp lines: 215-234](src/vehicle.cpp#L205). Some of states change based on logic conditions and 
+some based on cost functions. There were implemented 2 cost functions: distance_to_vehicle_cost [vehicle.cpp lines: 277-279](src/vehicle.cpp#L277)
+and vehicle_speed [vehicle.cpp lines: 284-289](src/vehicle.cpp#L284). They used to change state from "keep lane" state to "prepare lane change left"/"prepare lane change right" states.
+It allows to find a best state based on distance to the vehicle ahead/behind and it's speed. Weights of cost functions adjusted with the sense that speed 
+of the vehicle ahead is more important than distance to that vehicle.
 
 ## Basic Build Instructions
 
