@@ -80,7 +80,7 @@ Basic flow of transition function implemented in [vehicle.cpp lines: 215-234](sr
 some based on cost functions. There were implemented 2 cost functions: distance_to_vehicle_cost [vehicle.cpp lines: 277-279](src/vehicle.cpp#L277)
 and vehicle_speed [vehicle.cpp lines: 284-289](src/vehicle.cpp#L284). They used to change state from "keep lane" state to "prepare lane change left"/"prepare lane change right" states.
 It allows to find a best state based on distance to the vehicle ahead/behind and it's speed. Weights of cost functions adjusted with the sense that speed 
-of the vehicle ahead is more important than distance to that vehicle.
+of the vehicle ahead is more important than distance to that vehicle. Cost functions helps to find best state, so the car change lanes only when higher speed can be reached.
 
 ## Basic Build Instructions
 
