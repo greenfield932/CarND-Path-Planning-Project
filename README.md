@@ -50,7 +50,6 @@ The following video represents the ability of the car to change lanes.
 ## Implementation details on trajectory generation
 
 1. Calculate middle points at specified coordinates si based on the track waypoints and their corresponding representation on the vehicle’s lane 
-[I'm a relative reference to a repository file](../blob/master/LICENSE)
 [vehicle.cpp lines: 90-134] (src/vehicle.cpp#L90)
 
 ![alt text][image7]
