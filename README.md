@@ -4,6 +4,9 @@
 [image4]: ./images/4.gif
 [image5]: ./images/5.gif
 [image6]: ./images/6.gif
+[image7]: ./images/model1.png
+[image8]: ./images/model2.png
+[image9]: ./images/model3.png
 
 ### Goals
 The main goal of the project is to safely navigate around a virtual highway with other traffic that is driving +-10 MPH of the 50 MPH speed limit.
@@ -43,6 +46,29 @@ The following video represents the ability of the car to keep lane on a slightly
 The following video represents the ability of the car to change lanes.
 
 ![alt text][image6]
+
+## Implementation details on trajectory generation
+
+1. Calculate middle points at specified coordinates si based on the track waypoints and their corresponding representation on the vehicle’s lane 
+[I'm a relative reference to a repository file](../blob/master/LICENSE)
+[vehicle.cpp lines: 90-134] (src/vehicle.cpp#L90)
+
+![alt text][image7]
+
+2. Convert Frenet s,d coordinates of the points from steps1 to global x,y coordinates (vehicle.cpp lines: 90-134)
+3. Convert x,y coordinates to vehicle’s coordinates x’, y’ relative to reference point (vehicle’s position) 
+(shifting all points relative to reference point and [apply rotation](https://en.wikipedia.org/wiki/Rotation_matrix) with vehicle’s yaw angle) 
+
+4. Make a [spline](http://kluge.in-chemnitz.de/opensource/spline) F(x’) in the vehicle’s coordinate system using points from step3 
+
+
+![alt text][image8]
+
+![alt text][image9]
+
+## Implementation details on behavior planning
+
+
 
 ## Basic Build Instructions
 
