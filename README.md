@@ -54,7 +54,7 @@ The following video represents the ability of the car to change lanes.
 
 ![alt text][image7]
 
-2. Convert Frenet s,d coordinates of the points from steps1 to global x,y coordinates [helpers.cpp lines: 122-124](src/vehicle.cpp#L122)
+2. Convert Frenet s,d coordinates of the points from steps1 to global x,y coordinates [vehicles.cpp lines: 122-124](src/vehicle.cpp#L122)
 3. Convert x,y coordinates to vehicle’s coordinates x’, y’ relative to reference point (vehicle’s position) 
 (shifting all points relative to reference point and [apply rotation](https://en.wikipedia.org/wiki/Rotation_matrix) with vehicle’s yaw angle)
 [vehicle.cpp lines: 135](src/vehicle.cpp#L135)
