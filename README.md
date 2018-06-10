@@ -16,7 +16,7 @@ as well as driving inside of the marked road lanes at all times, unless going fr
 it should take a little over 5 minutes to complete 1 loop. Also the car should not experience total acceleration over 10 m/s^2 and jerk that is greater than 10 m/s^3.
 
 ### Simulator
-You can download the Term3 Simulator which contains the Path Planning Project from the [releases tab (https://github.com/udacity/self-driving-car-sim/releases/tag/T3_v1.2).
+You can download the Term3 Simulator which contains the Path Planning Project from the [releases tab](https://github.com/udacity/self-driving-car-sim/releases/tag/T3_v1.2).
 
 ### Input data
 Input data include vehicle position values (x, y, s, d, yaw) and speed values. Surronding environment represented by a way points of the middle of the track, lane count, lane width, and sensor fusion data 
