@@ -348,7 +348,7 @@ Vehicle::VehicleState Vehicle::best_state(const std::vector<VehicleState>& state
 }
 
 //transform coordinates to vehicle coordinate system
-void Vehicle::pts_to_vehicle_coords(const std::vector<double>& origin_xy, double yaw, std::vector<double>& ptsx, std::vector<double>& ptsy){
+void Vehicle::pts_to_vehicle_coords(const std::vector<double>& origin_xy, double yaw, std::vector<double>& ptsx, std::vector<double>& ptsy) const{
 	double ref_yaw = yaw;
 	double ref_x = origin_xy[0];
 	double ref_y = origin_xy[1];	
@@ -361,7 +361,7 @@ void Vehicle::pts_to_vehicle_coords(const std::vector<double>& origin_xy, double
 }
 
 //transform coordinates to global coordinate system
-void Vehicle::pts_to_global_coords(const std::vector<double>& origin_xy, double yaw, std::vector<double>& ptsx, std::vector<double>& ptsy){
+void Vehicle::pts_to_global_coords(const std::vector<double>& origin_xy, double yaw, std::vector<double>& ptsx, std::vector<double>& ptsy) const{
 	double ref_yaw = yaw;
 	double ref_x = origin_xy[0];
 	double ref_y = origin_xy[1];	
