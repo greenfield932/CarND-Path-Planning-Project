@@ -9,6 +9,7 @@
 [image9]: ./images/model3.png
 [image10]: ./images/FSM.png
 
+
 ### Goals
 The main goal of the project is to safely navigate around a virtual highway with other traffic that is driving +-10 MPH of the 50 MPH speed limit.
 The car should try to go as close as possible to the 50 MPH speed limit, which means passing slower traffic when possible, note that other cars will try to change lanes too. The car should avoid hitting other cars at all cost 
